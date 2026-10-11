@@ -213,24 +213,31 @@ return {
   -- { import = "nvchad.blink.lazyspec" },
 {
   "nvim-treesitter/nvim-treesitter",
-  branch = "master",
+  branch = "main", -- master is archived and broken on nvim 0.12
+  lazy = false,
   build = ":TSUpdate",
-  config = function()
-    require("nvim-treesitter.configs").setup({
-      ensure_installed = { "lua", "python", "javascript", "java", "typescript", "c", "cpp", "c_sharp", "haskell" }, -- Add your languages here
-      highlight = { enable = true },
+  opts = {
+    ensure_installed = {
+      "lua", "luadoc", "printf", "vim", "vimdoc", -- NvChad defaults (this list replaces theirs)
+      "markdown", "markdown_inline",
+      "python", "javascript", "java", "typescript", "c", "cpp", "c_sharp", "haskell", -- Add your languages here
+    },
+  },
+  config = function(_, opts)
+    -- treesitter add custom parser (main branch API)
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "TSUpdate",
+      callback = function()
+        require("nvim-treesitter.parsers").tzpl = {
+          install_info = {
+            path = vim.fn.expand("~/.tree-sitter/tree-sitter-tzpl"), -- Replace with your actual path
+          },
+        }
+      end,
     })
 
-  -- treesitter add custom parser
-  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-
-  parser_config.tzpl = {
-    install_info = {
-      url = "~/.tree-sitter/tree-sitter-tzpl", -- Replace with your actual path
-      files = { "src/parser.c" , "src/scanner.c"}, -- Add "src/scanner.c" here if your parser uses a custom scanner
-    },
-    filetype = "tzpl",
-  }
+    -- highlighting is enabled by NvChad's FileType autocmd (vim.treesitter.start)
+    require("nvim-treesitter").install(opts.ensure_installed)
   end,
 },
 {
